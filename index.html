@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <title>CDFD 模块规格生成器</title>
+</head>
+<body>
+  <main>
+    <h1>CDFD 模块规格生成器</h1>
+    <p class="lede">导入 CDFD，点击图中的过程框填写规格。</p>
+
+    <section class="panel import-panel" aria-label="导入 CDFD">
+      <div class="import-actions">
+        <label class="file-picker primary">
+          <input type="file" id="cdfd-file" accept=".drawio,.xml,application/xml,text/xml" aria-describedby="format-hint">
+          选择图文件
+        </label>
+        <button id="load-example" type="button">载入师生档案系统示例</button>
+        <a class="text-link" href="student-teacher-cdfd.drawio" download>下载 draw.io 示例</a>
+        <button id="download-example" class="text-link" type="button">下载 XML 示例</button>
+      </div>
+      <label id="pages" hidden>
+        图页
+        <select id="page-select"><option value="">请选择图页</option></select>
+      </label>
+      <p class="hint" id="format-hint">支持 .drawio、draw.io XML 和 CDFD XML。</p>
+      <p id="status" role="status">等待导入</p>
+    </section>
+
+    <div id="workspace" class="workspace" hidden>
+      <div class="workspace-top">
+        <section class="panel diagram-panel" aria-labelledby="diagram-title">
+          <div class="panel-header">
+            <h2 id="diagram-title">CDFD 图</h2>
+            <div class="diagram-actions" aria-label="画布缩放">
+              <button id="diagram-out" type="button" aria-label="缩小画布">−</button>
+              <button id="diagram-in" type="button" aria-label="放大画布">＋</button>
+              <button id="diagram-fit" type="button">适合窗口</button>
+            </div>
+          </div>
+          <div id="diagram-viewport" tabindex="0" aria-label="可滚动的 CDFD 画布">
+            <svg id="diagram" role="group" aria-label="点击过程框填写规格"></svg>
+          </div>
+          <details class="process-list">
+            <summary>过程列表</summary>
+            <nav id="sections" aria-label="规格章节"></nav>
+          </details>
+        </section>
+
+        <section class="panel fields" id="fields" aria-labelledby="fields-title">
+          <div class="fields-header">
+            <h2 id="fields-title" aria-live="polite"></h2>
+            <button id="module-fields" type="button">模块与存储</button>
+          </div>
+          <div id="form"></div>
+        </section>
+      </div>
+
+      <section class="panel preview" aria-labelledby="preview-title">
+        <div class="panel-header">
+          <h2 id="preview-title">SOFL 实时预览</h2>
+          <button id="toggle-raw" type="button">编辑文本</button>
+        </div>
+        <p class="hint raw-note" id="raw-note" hidden>文本修改仅用于导出。返回表单会恢复由表单生成的预览。</p>
+        <textarea id="editor" wrap="off" readonly spellcheck="false" autocapitalize="off" aria-labelledby="preview-title"></textarea>
+        <details id="issues">
+          <summary id="issue-count"></summary>
+          <ul id="issue-list"></ul>
+          <button id="download-draft" type="button">导出含待填项的草稿</button>
+        </details>
+        <div class="export-actions">
+          <button id="download-sofl" class="primary" type="button">导出 .sofl</button>
+          <button id="download-graph" type="button">导出图结构 XML</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script id="example-cdfd" type="application/xml">
+<?xml version="1.0" encoding="UTF-8"?>
+<cdfd module="STUDENT_TEACHER_SYSTEM" behavior="CDFD_1">
+  <actor id="admin" name="Administrator"/>
+  <actor id="student" name="Student"/>
+  <actor id="teacher" name="Teacher"/>
+
+  <process id="receive" name="Receive_Command"/>
+  <process id="validate" name="Validate_Request"/>
+  <process id="add-student" name="Add_Student"/>
+  <process id="modify-student" name="Modify_Student"/>
+  <process id="query-student" name="Query_Student"/>
+  <process id="add-teacher" name="Add_Teacher"/>
+  <process id="modify-teacher" name="Modify_Teacher"/>
+  <process id="query-teacher" name="Query_Teacher"/>
+
+  <store id="users" name="user_file" scope="existing"/>
+  <store id="students" name="student_file" scope="existing"/>
+  <store id="teachers" name="teacher_file" scope="existing"/>
+
+  <flow from="admin" to="receive" name="admin_request" kind="signal"/>
+  <flow from="student" to="receive" name="student_request" kind="signal"/>
+  <flow from="teacher" to="receive" name="teacher_request" kind="signal"/>
+  <flow from="receive" to="validate" name="request" in-port="request"/>
+  <flow to="validate" name="request_data" in-port="request"/>
+
+  <flow from="validate" to="add-student" name="add_student_req"/>
+  <flow from="validate" to="modify-student" name="modify_student_req"/>
+  <flow from="validate" to="query-student" name="query_student_req"/>
+  <flow from="validate" to="add-teacher" name="add_teacher_req"/>
+  <flow from="validate" to="modify-teacher" name="modify_teacher_req"/>
+  <flow from="validate" to="query-teacher" name="query_teacher_req"/>
+  <flow from="validate" name="access_error"/>
+  <flow from="add-student" name="student_added"/>
+  <flow from="add-student" name="student_add_error"/>
+  <flow from="modify-student" name="student_modified"/>
+  <flow from="modify-student" name="student_modify_error"/>
+  <flow from="query-student" name="student_info"/>
+  <flow from="query-student" name="student_query_error"/>
+  <flow from="add-teacher" name="teacher_added"/>
+  <flow from="add-teacher" name="teacher_add_error"/>
+  <flow from="modify-teacher" name="teacher_modified"/>
+  <flow from="modify-teacher" name="teacher_modify_error"/>
+  <flow from="query-teacher" name="teacher_info"/>
+  <flow from="query-teacher" name="teacher_query_error"/>
+
+  <access process="validate" store="users" mode="rd"/>
+  <access process="add-student" store="students" mode="wr"/>
+  <access process="add-student" store="users" mode="wr"/>
+  <access process="modify-student" store="students" mode="wr"/>
+  <access process="query-student" store="students" mode="rd"/>
+  <access process="add-teacher" store="teachers" mode="wr"/>
+  <access process="add-teacher" store="users" mode="wr"/>
+  <access process="modify-teacher" store="teachers" mode="wr"/>
+  <access process="query-teacher" store="teachers" mode="rd"/>
+</cdfd>
+  </script>
+
+  <script src="cdfd.js"></script>
+  <script src="diagram.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

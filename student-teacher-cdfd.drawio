@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile compressed="false">
+  <diagram id="student-teacher" name="CDFD_1">
+    <mxGraphModel cdfdModule="STUDENT_TEACHER_SYSTEM" cdfdBehavior="CDFD_1" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1600" pageHeight="1220">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <object id="cdfd-module" label="" cdfdKind="module" cdfdModule="STUDENT_TEACHER_SYSTEM" cdfdBehavior="CDFD_1">
+          <mxCell vertex="1" parent="1" visible="0">
+            <mxGeometry width="1" height="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="admin" label="Administrator" cdfdKind="actor">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#4d5a58;">
+            <mxGeometry x="34" y="395" width="146" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="student" label="Student" cdfdKind="actor">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#4d5a58;">
+            <mxGeometry x="34" y="520" width="146" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="teacher" label="Teacher" cdfdKind="actor">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#4d5a58;">
+            <mxGeometry x="34" y="645" width="146" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="receive" label="Receive_Command" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="296" y="484" width="168" height="132" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="validate" label="Validate_Request" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="556" y="390" width="182" height="320" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="add-student" label="Add_Student" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="110" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="modify-student" label="Modify_Student" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="271" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="query-student" label="Query_Student" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="432" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="add-teacher" label="Add_Teacher" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="593" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="modify-teacher" label="Modify_Teacher" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="754" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="query-teacher" label="Query_Teacher" cdfdKind="process">
+          <mxCell vertex="1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#edf6f3;strokeColor=#32675d;">
+            <mxGeometry x="890" y="915" width="154" height="76" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="users" label="user_file" cdfdKind="store" cdfdScope="existing">
+          <mxCell vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5ed;strokeColor=#6c6c49;">
+            <mxGeometry x="568" y="64" width="154" height="62" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="students" label="student_file" cdfdKind="store" cdfdScope="existing">
+          <mxCell vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5ed;strokeColor=#6c6c49;">
+            <mxGeometry x="1092" y="396" width="148" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="teachers" label="teacher_file" cdfdKind="store" cdfdScope="existing">
+          <mxCell vertex="1" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5ed;strokeColor=#6c6c49;">
+            <mxGeometry x="1092" y="879" width="148" height="60" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-0" label="admin_request" cdfdSignal="1">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;" source="admin" target="receive">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-1" label="student_request" cdfdSignal="1">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;" source="student" target="receive">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-2" label="teacher_request" cdfdSignal="1">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;dashed=1;" source="teacher" target="receive">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-3" label="request" cdfdInPort="request">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;entryX=0;entryY=0.5;" source="receive" target="validate">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-4" label="request_data" cdfdInPort="request">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;entryX=0;entryY=0.3;" target="validate">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="323" y="319" as="sourcePoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-5" label="add_student_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.10;entryX=0;entryY=0.5;" source="validate" target="add-student">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-6" label="modify_student_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.22;entryX=0;entryY=0.5;" source="validate" target="modify-student">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-7" label="query_student_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.34;entryX=0;entryY=0.5;" source="validate" target="query-student">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-8" label="add_teacher_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.46;entryX=0;entryY=0.5;" source="validate" target="add-teacher">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-9" label="modify_teacher_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.58;entryX=0;entryY=0.5;" source="validate" target="modify-teacher">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-10" label="query_teacher_req">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.70;entryX=0;entryY=0.5;" source="validate" target="query-teacher">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="f-11" label="access_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;" source="validate">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="815" y="805" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-12" label="student_added">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="add-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="129.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-13" label="student_add_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="add-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="167.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-14" label="student_modified">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="modify-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="290.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-15" label="student_modify_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="modify-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="328.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-16" label="student_info">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="query-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="451.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-17" label="student_query_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="query-student">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="489.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-18" label="teacher_added">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="add-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="612.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-19" label="teacher_add_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="add-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="650.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-20" label="teacher_modified">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="modify-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="773.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-21" label="teacher_modify_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="modify-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="811.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-22" label="teacher_info">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.25;" source="query-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="934.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="f-23" label="teacher_query_error">
+          <mxCell edge="1" parent="1" style="html=1;endArrow=block;endFill=1;rounded=0;fontSize=12;labelBackgroundColor=#ffffff;exitX=1;exitY=0.75;" source="query-teacher">
+            <mxGeometry relative="1" as="geometry">
+              <mxPoint x="1480" y="972.0" as="targetPoint" />
+            </mxGeometry>
+          </mxCell>
+        </object>
+        <object id="a-0" label="" cdfdAccess="rd">
+          <mxCell edge="1" parent="1" source="users" target="validate" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-1" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="students" target="add-student" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-2" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="users" target="add-student" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;edgeStyle=orthogonalEdgeStyle;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-3" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="students" target="modify-student" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-4" label="" cdfdAccess="rd">
+          <mxCell edge="1" parent="1" source="students" target="query-student" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-5" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="teachers" target="add-teacher" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-6" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="users" target="add-teacher" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;edgeStyle=orthogonalEdgeStyle;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-7" label="" cdfdAccess="wr">
+          <mxCell edge="1" parent="1" source="teachers" target="modify-teacher" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;startArrow=block;startFill=1;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+        <object id="a-8" label="" cdfdAccess="rd">
+          <mxCell edge="1" parent="1" source="teachers" target="query-teacher" style="html=1;strokeColor=#65716f;endArrow=block;endFill=1;rounded=0;">
+            <mxGeometry relative="1" as="geometry" />
+          </mxCell>
+        </object>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

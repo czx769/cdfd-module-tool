@@ -264,10 +264,8 @@ function renderIssues() {
 function setRawMode(editing) {
   rawMode = editing;
   byId("toggle-raw").textContent = editing ? "返回表单" : "编辑文本";
-  byId("preview-title").textContent = model
-    ? (editing ? "SOFL 文本编辑" : "SOFL 实时预览")
-    : "SOFL 通用模块模板";
-  byId("raw-note").hidden = !editing || !model;
+  byId("preview-title").textContent = editing ? "SOFL 文本编辑" : "SOFL 实时预览";
+  byId("raw-note").hidden = !editing;
   editor.readOnly = !editing;
   form.inert = editing;
   byId("fields").toggleAttribute("data-locked", editing);
@@ -291,27 +289,14 @@ function resizeDiagram() {
   byId("diagram-in").disabled = diagramZoom >= 4;
 }
 
-function showWorkspace() {
-  const templateOnly = !model;
-  byId("workspace").hidden = false;
-  byId("workspace-top").hidden = templateOnly;
-  byId("toggle-raw").hidden = templateOnly;
-  byId("download-graph").hidden = templateOnly;
-  byId("template-note").hidden = !templateOnly;
-  issues.open = false;
-  setRawMode(templateOnly);
-}
-
-function canReplaceDocument() {
-  const dirty = formDirty || (rawMode && editor.value !== rawLastSaved);
-  return !dirty || window.confirm("切换或导入会替换当前未导出的修改。继续吗？");
-}
-
 function openModel(next, label) {
-  if (!canReplaceDocument()) return;
+  const dirty = formDirty || (rawMode && editor.value !== rawLastSaved);
+  if (dirty && !window.confirm("切换或导入会替换当前未导出的修改。继续吗？")) return;
   model = next;
   formDirty = false;
-  showWorkspace();
+  byId("workspace").hidden = false;
+  issues.open = false;
+  setRawMode(false);
   diagramSize = drawDiagram(diagram, model, selectProcess);
   diagramZoom = 1;
   resizeDiagram();
@@ -319,20 +304,6 @@ function openModel(next, label) {
   renderSections();
   showSection("module", true);
   setStatus(`已导入 ${label} · ${model.processes.length} 个过程 · ${model.stores.length} 个数据存储 · ${model.flows.length} 条数据流`);
-}
-
-function openModuleTemplate() {
-  if (!canReplaceDocument()) return;
-  importRequest++;
-  byId("pages").hidden = true;
-  model = null;
-  formDirty = false;
-  rawLastSaved = rawBaseline = byId("example-module").textContent.trim() + "\n";
-  editor.value = rawBaseline;
-  editor.scrollTop = editor.scrollLeft = 0;
-  showWorkspace();
-  renderIssues();
-  setStatus("已载入教材第 98 页通用模块模板");
 }
 
 async function loadSource(source, label, request, defaults) {
@@ -417,8 +388,6 @@ byId("load-atm-example").addEventListener("click", () => {
   });
 });
 
-byId("load-module-example").addEventListener("click", openModuleTemplate);
-
 byId("module-fields").addEventListener("click", () => showSection("module", true));
 byId("diagram-in").addEventListener("click", () => {
   diagramZoom = Math.min(4, diagramZoom * 1.3);
@@ -440,7 +409,6 @@ byId("download-example").addEventListener("click", () => {
 });
 
 byId("toggle-raw").addEventListener("click", () => {
-  if (!model) return;
   if (rawMode) {
     if (editor.value !== rawBaseline && editor.value !== rawLastSaved &&
         !window.confirm("返回表单会丢弃未导出的文本修改。继续吗？")) return;
@@ -470,7 +438,6 @@ byId("download-sofl").addEventListener("click", () => {
 byId("download-draft").addEventListener("click", downloadSpecification);
 
 byId("download-graph").addEventListener("click", () => {
-  if (!model) return;
   const badModule = !identifierPattern.test(model.moduleName.trim());
   const badBehavior = model.behavior.trim() && !behaviorPattern.test(model.behavior.trim());
   if (badModule || badBehavior) {

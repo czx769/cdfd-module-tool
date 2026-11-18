@@ -24,7 +24,6 @@
       <div class="example-actions" role="group" aria-label="内置示例">
         <button id="load-example" type="button">载入师生档案系统示例</button>
         <button id="load-atm-example" type="button">ATM 示例（图 4.37）</button>
-        <button id="load-module-example" type="button">通用模块模板（第 98 页）</button>
       </div>
       <label id="pages" hidden>
         图页
@@ -35,7 +34,7 @@
     </section>
 
     <div id="workspace" class="workspace" hidden>
-      <div id="workspace-top" class="workspace-top">
+      <div class="workspace-top">
         <section class="panel diagram-panel" aria-labelledby="diagram-title">
           <div class="panel-header">
             <h2 id="diagram-title">CDFD 图</h2>
@@ -69,7 +68,6 @@
           <button id="toggle-raw" type="button">编辑文本</button>
         </div>
         <p class="hint raw-note" id="raw-note" hidden>文本修改仅用于导出。返回表单会恢复由表单生成的预览。</p>
-        <p class="hint raw-note" id="template-note" hidden>可直接编辑教材第 98 页的模块模板。填写所需段落，删除不适用的可选段落。</p>
         <textarea id="editor" wrap="off" readonly spellcheck="false" autocapitalize="off" aria-labelledby="preview-title"></textarea>
         <details id="issues">
           <summary id="issue-count"></summary>
@@ -211,38 +209,6 @@
     <mxCell id="write-accounts" edge="1" parent="1" source="accounts" target="withdraw" style="startArrow=block;endArrow=block;exitX=1;exitY=.53;entryX=.46;entryY=0;"/>
   </root>
 </mxGraphModel>
-  </script>
-
-  <script id="example-module" type="text/plain">
-module 【待填模块名】 / 【待填父模块名，可省略斜杠和父模块名】;
-
-const
-  【待填常量声明，如无需可删除此节】
-
-type
-  【待填类型声明，如无需可删除此节】
-
-var
-  【待填变量声明，如无需可删除此节】
-
-inv
-  【待填不变式，如无需可删除此节】
-
-behav 【待填 CDFD 编号，例如 CDFD_1】;
-
-process Init()
-  【待填本地存储初始化，如无需可删除此过程】
-end_process;
-
-process 【待填过程名】(【待填输入声明】)
-    【待填输出声明】
-pre 【待填前置条件】
-post 【待填后置条件】
-end_process;
-
-【待填辅助函数规格，如无需可删除此段】
-
-end_module
   </script>
 
   <script src="cdfd.js"></script>

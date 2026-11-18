@@ -18,9 +18,13 @@
           <input type="file" id="cdfd-file" accept=".drawio,.xml,application/xml,text/xml" aria-describedby="format-hint">
           选择图文件
         </label>
+        <a class="text-link" href="student-teacher-cdfd.drawio" download>下载师生示例 draw.io</a>
+        <button id="download-example" class="text-link" type="button">下载师生示例 XML</button>
+      </div>
+      <div class="example-actions" role="group" aria-label="内置示例">
         <button id="load-example" type="button">载入师生档案系统示例</button>
-        <a class="text-link" href="student-teacher-cdfd.drawio" download>下载 draw.io 示例</a>
-        <button id="download-example" class="text-link" type="button">下载 XML 示例</button>
+        <button id="load-atm-example" type="button">ATM 示例（图 4.37）</button>
+        <button id="load-module-example" type="button">通用模块模板（第 98 页）</button>
       </div>
       <label id="pages" hidden>
         图页
@@ -31,7 +35,7 @@
     </section>
 
     <div id="workspace" class="workspace" hidden>
-      <div class="workspace-top">
+      <div id="workspace-top" class="workspace-top">
         <section class="panel diagram-panel" aria-labelledby="diagram-title">
           <div class="panel-header">
             <h2 id="diagram-title">CDFD 图</h2>
@@ -65,6 +69,7 @@
           <button id="toggle-raw" type="button">编辑文本</button>
         </div>
         <p class="hint raw-note" id="raw-note" hidden>文本修改仅用于导出。返回表单会恢复由表单生成的预览。</p>
+        <p class="hint raw-note" id="template-note" hidden>可直接编辑教材第 98 页的模块模板。填写所需段落，删除不适用的可选段落。</p>
         <textarea id="editor" wrap="off" readonly spellcheck="false" autocapitalize="off" aria-labelledby="preview-title"></textarea>
         <details id="issues">
           <summary id="issue-count"></summary>
@@ -135,6 +140,109 @@
   <access process="modify-teacher" store="teachers" mode="wr"/>
   <access process="query-teacher" store="teachers" mode="rd"/>
 </cdfd>
+  </script>
+
+  <script id="example-atm" type="application/xml">
+<mxGraphModel cdfdModule="SYSTEM_ATM" cdfdBehavior="CDFD_1">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="customer" value="Customer" vertex="1" parent="1" cdfdKind="actor">
+      <mxGeometry x="30" y="498" width="145" height="100" as="geometry"/>
+    </mxCell>
+    <mxCell id="receive" value="Receive_Command" vertex="1" parent="1" cdfdKind="process">
+      <mxGeometry x="278" y="337" width="192" height="102" as="geometry"/>
+    </mxCell>
+    <mxCell id="check" value="Check_Password" vertex="1" parent="1" cdfdKind="process">
+      <mxGeometry x="606" y="337" width="188" height="108" as="geometry"/>
+    </mxCell>
+    <mxCell id="withdraw" value="Withdraw" vertex="1" parent="1" cdfdKind="process">
+      <mxGeometry x="952" y="159" width="183" height="114" as="geometry"/>
+    </mxCell>
+    <mxCell id="show" value="Show_Balance" vertex="1" parent="1" cdfdKind="process">
+      <mxGeometry x="952" y="506" width="183" height="104" as="geometry"/>
+    </mxCell>
+    <mxCell id="accounts" value="account_file" vertex="1" parent="1" cdfdKind="store" cdfdScope="existing" cdfdType="set of Account">
+      <mxGeometry x="546" y="42" width="196" height="56" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="command-balance" value="balance" edge="1" parent="1" source="customer" target="receive" cdfdSignal="1" style="exitX=.65;exitY=0;entryX=0;entryY=.25;"/>
+    <mxCell id="command-withdraw" value="w_draw" edge="1" parent="1" source="customer" target="receive" cdfdSignal="1" style="exitX=1;exitY=.64;entryX=0;entryY=.74;"/>
+    <mxCell id="card" value="card_id" edge="1" parent="1" target="check" cdfdInPort="credentials" cdfdType="nat" style="entryX=0;entryY=.28;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="460" y="226" as="sourcePoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="selection" value="sel" edge="1" parent="1" source="receive" target="check" cdfdInPort="credentials" cdfdType="bool" style="exitX=1;exitY=.49;entryX=0;entryY=.46;"/>
+    <mxCell id="password" value="pass" edge="1" parent="1" target="check" cdfdInPort="credentials" cdfdType="nat" style="entryX=0;entryY=.68;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="450" y="497" as="sourcePoint"/>
+        <Array as="points"><mxPoint x="564" y="497"/></Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="amount" value="amount" edge="1" parent="1" target="withdraw" cdfdInPort="withdrawal" cdfdType="real" style="entryX=0;entryY=.25;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="756" y="187.5" as="sourcePoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="withdraw-account" value="account1" edge="1" parent="1" source="check" target="withdraw" cdfdInPort="withdrawal" cdfdType="Account" style="exitX=1;exitY=.25;entryX=0;entryY=.73;"/>
+    <mxCell id="password-message" value="pr_meg" edge="1" parent="1" source="check" cdfdType="string" style="exitX=1;exitY=.49;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1035" y="389.92" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="balance-account" value="account2" edge="1" parent="1" source="check" target="show" cdfdType="Account" style="exitX=1;exitY=.76;entryX=0;entryY=.49;"/>
+    <mxCell id="withdraw-message" value="e_msg" edge="1" parent="1" source="withdraw" cdfdType="string" style="exitX=1;exitY=.25;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1338" y="187.5" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="cash" value="cash" edge="1" parent="1" source="withdraw" cdfdType="real" style="exitX=1;exitY=.75;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1338" y="244.5" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="balance" value="balance" edge="1" parent="1" source="show" cdfdType="real" style="exitX=1;exitY=.49;">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="1340" y="556.96" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="read-accounts" edge="1" parent="1" source="accounts" target="check" style="exitX=.38;exitY=1;entryX=.55;entryY=0;"/>
+    <mxCell id="write-accounts" edge="1" parent="1" source="accounts" target="withdraw" style="startArrow=block;endArrow=block;exitX=1;exitY=.53;entryX=.46;entryY=0;"/>
+  </root>
+</mxGraphModel>
+  </script>
+
+  <script id="example-module" type="text/plain">
+module 【待填模块名】 / 【待填父模块名，可省略斜杠和父模块名】;
+
+const
+  【待填常量声明，如无需可删除此节】
+
+type
+  【待填类型声明，如无需可删除此节】
+
+var
+  【待填变量声明，如无需可删除此节】
+
+inv
+  【待填不变式，如无需可删除此节】
+
+behav 【待填 CDFD 编号，例如 CDFD_1】;
+
+process Init()
+  【待填本地存储初始化，如无需可删除此过程】
+end_process;
+
+process 【待填过程名】(【待填输入声明】)
+    【待填输出声明】
+pre 【待填前置条件】
+post 【待填后置条件】
+end_process;
+
+【待填辅助函数规格，如无需可删除此段】
+
+end_module
   </script>
 
   <script src="cdfd.js"></script>

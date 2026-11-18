@@ -55,12 +55,13 @@ button:disabled { opacity: .5; cursor: default; }
 .hint, #status { font-size: .84rem; }
 .panel { min-width: 0; background: white; border: 1px solid var(--line); border-radius: 11px; }
 .import-panel { margin: 20px 0 16px; padding: 14px 16px; }
-.import-actions, .export-actions, .panel-header {
+.import-actions, .example-actions, .export-actions, .panel-header {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
+.example-actions { margin-top: 8px; }
 .import-panel .hint { margin-top: 8px; }
 #status { margin-top: 3px; color: var(--accent); overflow-wrap: anywhere; }
 #status[data-error] { color: #a22c20; }

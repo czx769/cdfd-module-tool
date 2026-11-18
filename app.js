@@ -264,8 +264,10 @@ function renderIssues() {
 function setRawMode(editing) {
   rawMode = editing;
   byId("toggle-raw").textContent = editing ? "返回表单" : "编辑文本";
-  byId("preview-title").textContent = editing ? "SOFL 文本编辑" : "SOFL 实时预览";
-  byId("raw-note").hidden = !editing;
+  byId("preview-title").textContent = model
+    ? (editing ? "SOFL 文本编辑" : "SOFL 实时预览")
+    : "SOFL 通用模块模板";
+  byId("raw-note").hidden = !editing || !model;
   editor.readOnly = !editing;
   form.inert = editing;
   byId("fields").toggleAttribute("data-locked", editing);
@@ -289,27 +291,54 @@ function resizeDiagram() {
   byId("diagram-in").disabled = diagramZoom >= 4;
 }
 
+function showWorkspace() {
+  const templateOnly = !model;
+  byId("workspace").hidden = false;
+  byId("workspace-top").hidden = templateOnly;
+  byId("toggle-raw").hidden = templateOnly;
+  byId("download-graph").hidden = templateOnly;
+  byId("template-note").hidden = !templateOnly;
+  issues.open = false;
+  setRawMode(templateOnly);
+}
+
+function canReplaceDocument() {
+  const dirty = formDirty || (rawMode && editor.value !== rawLastSaved);
+  return !dirty || window.confirm("切换或导入会替换当前未导出的修改。继续吗？");
+}
+
 function openModel(next, label) {
-  if ((formDirty || (rawMode && editor.value !== rawLastSaved)) &&
-      !window.confirm("导入会替换当前未导出的修改。继续吗？")) return;
+  if (!canReplaceDocument()) return;
   model = next;
   formDirty = false;
-  byId("workspace").hidden = false;
-  setRawMode(false);
+  showWorkspace();
   diagramSize = drawDiagram(diagram, model, selectProcess);
   diagramZoom = 1;
   resizeDiagram();
   diagramViewport.scrollTo(0, 0);
-  issues.open = false;
   renderSections();
   showSection("module", true);
   setStatus(`已导入 ${label} · ${model.processes.length} 个过程 · ${model.stores.length} 个数据存储 · ${model.flows.length} 条数据流`);
 }
 
-async function loadSource(source, label, request) {
+function openModuleTemplate() {
+  if (!canReplaceDocument()) return;
+  importRequest++;
+  byId("pages").hidden = true;
+  model = null;
+  formDirty = false;
+  rawLastSaved = rawBaseline = byId("example-module").textContent.trim() + "\n";
+  editor.value = rawBaseline;
+  editor.scrollTop = editor.scrollLeft = 0;
+  showWorkspace();
+  renderIssues();
+  setStatus("已载入教材第 98 页通用模块模板");
+}
+
+async function loadSource(source, label, request, defaults) {
   try {
     const next = await source.load();
-    if (request === importRequest) openModel(next, label);
+    if (request === importRequest) openModel(Object.assign(next, defaults), label);
   } catch (error) {
     if (request === importRequest) setStatus(`导入失败。${error.message}`, true);
   }
@@ -328,7 +357,7 @@ function download(filename, contents, mime) {
 
 function downloadSpecification() {
   if (!editor.value.trim()) return;
-  const editedName = editor.value.match(/^\s*module\s+([a-zA-Z][a-zA-Z0-9_]*)\s*;/)?.[1];
+  const editedName = editor.value.match(/^\s*module\s+([a-zA-Z][a-zA-Z0-9_]*)(?=\s*[/;])/)?.[1];
   download(`${editedName ?? "module"}.sofl`, editor.value, "text/plain;charset=utf-8");
   if (rawMode) rawLastSaved = editor.value;
   else formDirty = false;
@@ -366,10 +395,29 @@ pagePicker.addEventListener("change", () => {
   loadSource(source, `${sourceFile} / ${source.name}`, ++importRequest);
 });
 
-byId("load-example").addEventListener("click", () => {
+function loadExample(xml, label, defaults) {
+  const [source] = readSources(xml, label);
   byId("pages").hidden = true;
-  loadSource(readSources(example, "示例")[0], "师生档案系统示例", ++importRequest);
+  loadSource(source, label, ++importRequest, defaults);
+}
+
+byId("load-example").addEventListener("click", () => {
+  loadExample(example, "师生档案系统示例");
 });
+
+byId("load-atm-example").addEventListener("click", () => {
+  loadExample(byId("example-atm").textContent, "教材 ATM 示例", {
+    typeDeclarations: [
+      "Account = composed of",
+      "  account_no: nat",
+      "  password: nat",
+      "  balance: real",
+      "end;"
+    ].join("\n")
+  });
+});
+
+byId("load-module-example").addEventListener("click", openModuleTemplate);
 
 byId("module-fields").addEventListener("click", () => showSection("module", true));
 byId("diagram-in").addEventListener("click", () => {
@@ -392,6 +440,7 @@ byId("download-example").addEventListener("click", () => {
 });
 
 byId("toggle-raw").addEventListener("click", () => {
+  if (!model) return;
   if (rawMode) {
     if (editor.value !== rawBaseline && editor.value !== rawLastSaved &&
         !window.confirm("返回表单会丢弃未导出的文本修改。继续吗？")) return;
@@ -421,6 +470,7 @@ byId("download-sofl").addEventListener("click", () => {
 byId("download-draft").addEventListener("click", downloadSpecification);
 
 byId("download-graph").addEventListener("click", () => {
+  if (!model) return;
   const badModule = !identifierPattern.test(model.moduleName.trim());
   const badBehavior = model.behavior.trim() && !behaviorPattern.test(model.behavior.trim());
   if (badModule || badBehavior) {

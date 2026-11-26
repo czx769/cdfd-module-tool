@@ -18,8 +18,12 @@
           <input type="file" id="cdfd-file" accept=".drawio,.xml,application/xml,text/xml" aria-describedby="format-hint">
           选择图文件
         </label>
+        <label class="file-picker">
+          <input type="file" id="sofl-file" accept=".sofl" aria-describedby="format-hint">
+          导入 .sofl
+        </label>
         <a class="text-link" href="student-teacher-cdfd.drawio" download>下载师生示例 draw.io</a>
-        <button id="download-example" class="text-link" type="button">下载师生示例 XML</button>
+        <a class="text-link" href="student-teacher-cdfd.xml" download>下载师生示例 XML</a>
       </div>
       <div class="example-actions" role="group" aria-label="内置示例">
         <button id="load-example" type="button">载入师生档案系统示例</button>
@@ -29,7 +33,7 @@
         图页
         <select id="page-select"><option value="">请选择图页</option></select>
       </label>
-      <p class="hint" id="format-hint">支持 .drawio、draw.io XML 和 CDFD XML。</p>
+      <p class="hint" id="format-hint">先载入示例或导入 CDFD，再导入对应的 .sofl 文件。</p>
       <p id="status" role="status">等待导入</p>
     </section>
 
@@ -47,6 +51,7 @@
           <div id="diagram-viewport" tabindex="0" aria-label="可滚动的 CDFD 画布">
             <svg id="diagram" role="group" aria-label="点击过程框填写规格"></svg>
           </div>
+          <p class="port-legend">I 输入端口 · O 输出端口</p>
           <details class="process-list">
             <summary>过程列表</summary>
             <nav id="sections" aria-label="规格章节"></nav>
@@ -65,9 +70,13 @@
       <section class="panel preview" aria-labelledby="preview-title">
         <div class="panel-header">
           <h2 id="preview-title">SOFL 实时预览</h2>
-          <button id="toggle-raw" type="button">编辑文本</button>
+          <div class="editor-actions">
+            <button id="cancel-raw" type="button" hidden>取消编辑</button>
+            <button id="toggle-raw" type="button">编辑文本</button>
+          </div>
         </div>
-        <p class="hint raw-note" id="raw-note" hidden>文本修改仅用于导出。返回表单会恢复由表单生成的预览。</p>
+        <p class="hint raw-note" id="raw-note" hidden>文本通过一致性校验后可导出，也可返回表单并应用修改。</p>
+        <p id="sofl-feedback" role="alert" hidden></p>
         <textarea id="editor" wrap="off" readonly spellcheck="false" autocapitalize="off" aria-labelledby="preview-title"></textarea>
         <details id="issues">
           <summary id="issue-count"></summary>
@@ -88,46 +97,79 @@
   <actor id="admin" name="Administrator"/>
   <actor id="student" name="Student"/>
   <actor id="teacher" name="Teacher"/>
-
-  <process id="receive" name="Receive_Command"/>
-  <process id="validate" name="Validate_Request"/>
-  <process id="add-student" name="Add_Student"/>
-  <process id="modify-student" name="Modify_Student"/>
-  <process id="query-student" name="Query_Student"/>
-  <process id="add-teacher" name="Add_Teacher"/>
-  <process id="modify-teacher" name="Modify_Teacher"/>
-  <process id="query-teacher" name="Query_Teacher"/>
-
+  <process id="receive" name="Receive_Command">
+    <input-port id="I1"/>
+    <input-port id="I2"/>
+    <input-port id="I3"/>
+    <output-port id="O1"/>
+  </process>
+  <process id="validate" name="Validate_Request">
+    <input-port id="request"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+    <output-port id="O3"/>
+    <output-port id="O4"/>
+    <output-port id="O5"/>
+    <output-port id="O6"/>
+    <output-port id="O7"/>
+  </process>
+  <process id="add-student" name="Add_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="modify-student" name="Modify_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="query-student" name="Query_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="add-teacher" name="Add_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="modify-teacher" name="Modify_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="query-teacher" name="Query_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
   <store id="users" name="user_file" scope="existing"/>
   <store id="students" name="student_file" scope="existing"/>
   <store id="teachers" name="teacher_file" scope="existing"/>
-
-  <flow from="admin" to="receive" name="admin_request" kind="signal"/>
-  <flow from="student" to="receive" name="student_request" kind="signal"/>
-  <flow from="teacher" to="receive" name="teacher_request" kind="signal"/>
-  <flow from="receive" to="validate" name="request" in-port="request"/>
+  <flow from="admin" to="receive" name="admin_request" kind="signal" in-port="I1"/>
+  <flow from="student" to="receive" name="student_request" kind="signal" in-port="I2"/>
+  <flow from="teacher" to="receive" name="teacher_request" kind="signal" in-port="I3"/>
+  <flow from="receive" to="validate" name="request" in-port="request" out-port="O1"/>
   <flow to="validate" name="request_data" in-port="request"/>
-
-  <flow from="validate" to="add-student" name="add_student_req"/>
-  <flow from="validate" to="modify-student" name="modify_student_req"/>
-  <flow from="validate" to="query-student" name="query_student_req"/>
-  <flow from="validate" to="add-teacher" name="add_teacher_req"/>
-  <flow from="validate" to="modify-teacher" name="modify_teacher_req"/>
-  <flow from="validate" to="query-teacher" name="query_teacher_req"/>
-  <flow from="validate" name="access_error"/>
-  <flow from="add-student" name="student_added"/>
-  <flow from="add-student" name="student_add_error"/>
-  <flow from="modify-student" name="student_modified"/>
-  <flow from="modify-student" name="student_modify_error"/>
-  <flow from="query-student" name="student_info"/>
-  <flow from="query-student" name="student_query_error"/>
-  <flow from="add-teacher" name="teacher_added"/>
-  <flow from="add-teacher" name="teacher_add_error"/>
-  <flow from="modify-teacher" name="teacher_modified"/>
-  <flow from="modify-teacher" name="teacher_modify_error"/>
-  <flow from="query-teacher" name="teacher_info"/>
-  <flow from="query-teacher" name="teacher_query_error"/>
-
+  <flow from="validate" to="add-student" name="add_student_req" in-port="I1" out-port="O1"/>
+  <flow from="validate" to="modify-student" name="modify_student_req" in-port="I1" out-port="O2"/>
+  <flow from="validate" to="query-student" name="query_student_req" in-port="I1" out-port="O3"/>
+  <flow from="validate" to="add-teacher" name="add_teacher_req" in-port="I1" out-port="O4"/>
+  <flow from="validate" to="modify-teacher" name="modify_teacher_req" in-port="I1" out-port="O5"/>
+  <flow from="validate" to="query-teacher" name="query_teacher_req" in-port="I1" out-port="O6"/>
+  <flow from="validate" name="access_error" out-port="O7"/>
+  <flow from="add-student" name="student_added" out-port="O1"/>
+  <flow from="add-student" name="student_add_error" out-port="O2"/>
+  <flow from="modify-student" name="student_modified" out-port="O1"/>
+  <flow from="modify-student" name="student_modify_error" out-port="O2"/>
+  <flow from="query-student" name="student_info" out-port="O1"/>
+  <flow from="query-student" name="student_query_error" out-port="O2"/>
+  <flow from="add-teacher" name="teacher_added" out-port="O1"/>
+  <flow from="add-teacher" name="teacher_add_error" out-port="O2"/>
+  <flow from="modify-teacher" name="teacher_modified" out-port="O1"/>
+  <flow from="modify-teacher" name="teacher_modify_error" out-port="O2"/>
+  <flow from="query-teacher" name="teacher_info" out-port="O1"/>
+  <flow from="query-teacher" name="teacher_query_error" out-port="O2"/>
   <access process="validate" store="users" mode="rd"/>
   <access process="add-student" store="students" mode="wr"/>
   <access process="add-student" store="users" mode="wr"/>
@@ -212,6 +254,7 @@
   </script>
 
   <script src="cdfd.js"></script>
+  <script src="sofl.js"></script>
   <script src="diagram.js"></script>
   <script src="app.js"></script>
 </body>

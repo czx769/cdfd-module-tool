@@ -138,7 +138,8 @@ function readDrawio(graph, filename, pageName) {
   if (behavior) cdfd.setAttribute("behavior", behavior);
 
   const edges = cells.filter(cell => cell.edge && cell.kind !== "ignore");
-  const terminals = new Set(edges.flatMap(({from, to}) => [from, to]).filter(Boolean));
+  const terminals = new Set(edges.flatMap(({from, to, style}) =>
+    [from, to, style.get("sourcePort"), style.get("targetPort")]).filter(Boolean));
   const ports = new Map();
   const labelsByEdge = new Map();
   for (const cell of cells) {
@@ -180,8 +181,12 @@ function readDrawio(graph, filename, pageName) {
     const hasStart = edge.style.has("startArrow") && edge.style.get("startArrow") !== "none";
     const hasEnd = edge.style.get("endArrow") !== "none";
     const reverse = hasStart && !hasEnd;
-    const source = drawioEndpoint(reverse ? edge.to : edge.from, ports, nodes, description);
-    const target = drawioEndpoint(reverse ? edge.from : edge.to, ports, nodes, description);
+    const sourcePort = edge.style.get("sourcePort");
+    const targetPort = edge.style.get("targetPort");
+    const from = ports.has(sourcePort) ? sourcePort : edge.from;
+    const to = ports.has(targetPort) ? targetPort : edge.to;
+    const source = drawioEndpoint(reverse ? to : from, ports, nodes, description);
+    const target = drawioEndpoint(reverse ? from : to, ports, nodes, description);
     const fromKind = nodes.get(source.nodeId);
     const toKind = nodes.get(target.nodeId);
     const touchesStore = fromKind === "store" || toKind === "store";
@@ -242,7 +247,7 @@ function buildModel(root) {
   const accesses = [];
   for (const element of root.children) {
     const kind = element.tagName;
-    if (element.childElementCount) throw new Error(`<${kind}> 内不应包含其他元素。`);
+    if (kind !== "process" && element.childElementCount) throw new Error(`<${kind}> 内不应包含其他元素。`);
     if (kind === "flow") {
       flows.push(element);
       continue;
@@ -271,6 +276,7 @@ function buildModel(root) {
       key: `${kind}-${nodes.size}`, element, kind, name, scope, type: field(element, "type"),
       inputs: new Map(), outputs: new Map(), stores: new Map(), pre: "", post: ""
     });
+    if (kind === "process") declarePorts(nodes.get(id));
   }
 
   const processes = [...nodes.values()].filter(node => node.kind === "process");
@@ -295,10 +301,18 @@ function buildModel(root) {
     const group = {key: `flow-${index}`, type: kind === "signal" ? "sign" : type, fixed: kind === "signal", members: []};
     const record = {name, element, group};
     group.members.push(record);
-    if (from?.kind === "process") addFlow(from.outputs, field(element, "out-port"), record);
-    if (to?.kind === "process") addFlow(to.inputs, field(element, "in-port"), record);
+    record.outPort = connectPort(from, "outputs", "out-port", record);
+    record.inPort = connectPort(to, "inputs", "in-port", record);
     return record;
   });
+
+  for (const process of processes) {
+    for (const [direction, caption] of [["inputs", "输入"], ["outputs", "输出"]]) {
+      for (const port of describePorts(process[direction], direction)) {
+        if (!port.records.size) throw new Error(`${process.name} 的${caption}端口 ${port.id} 未连接数据流。`);
+      }
+    }
+  }
 
   for (const access of accesses) {
     const process = nodes.get(field(access, "process"));
@@ -315,8 +329,54 @@ function buildModel(root) {
 
   return {
     moduleName, behavior, processes, stores, nodes, root, flows: records,
-    typeDeclarations: "", invariant: "", initialization: {key: "init", name: "Init", pre: "", post: ""}
+    parentModule: "", constants: "", typeDeclarations: "", invariant: "", functions: "",
+    includeInit: false, initialization: {key: "init", name: "Init", pre: "", post: ""}
   };
+}
+
+function declarePorts(process) {
+  process.declared = new Set();
+  for (const element of process.element.children) {
+    const direction = {"input-port": "inputs", "output-port": "outputs"}[element.tagName];
+    if (!["inputs", "outputs"].includes(direction) || element.childElementCount) {
+      throw new Error(`${process.name} 的端口声明应为 <input-port> 或 <output-port>。`);
+    }
+    const id = field(element, "id");
+    const key = `port:${id}`;
+    if (!id || process[direction].has(key)) {
+      throw new Error(`${process.name} 的 <${element.tagName}> id 缺失或重复。`);
+    }
+    process.declared.add(direction);
+    process[direction].set(key, new Map());
+  }
+}
+
+function connectPort(process, direction, attribute, record) {
+  const id = field(record.element, attribute);
+  if (process?.kind !== "process") {
+    if (id) throw new Error(`数据流 ${record.name} 的 ${attribute} 只能引用过程端口。`);
+    return "";
+  }
+  const key = id ? `port:${id}` : `flow:${record.name}`;
+  if (process.declared.has(direction) && !process[direction].has(key)) {
+    const detail = id ? `引用了未声明的端口 ${id}` : "需要显式指定端口";
+    throw new Error(`${process.name} 的数据流 ${record.name} 的 ${attribute} ${detail}。`);
+  }
+  addFlow(process[direction], key, record);
+  return key;
+}
+
+function describePorts(ports, direction) {
+  const used = new Set([...ports.keys()].filter(key => key.startsWith("port:")).map(key => key.slice(5)));
+  const prefix = direction === "inputs" ? "I" : "O";
+  return [...ports].map(([key, records], index) => {
+    const label = `${prefix}${index + 1}`;
+    if (key.startsWith("port:")) return {key, id: key.slice(5), label, records};
+    let id = label;
+    while (used.has(id)) id += "_";
+    used.add(id);
+    return {key, id, label, records};
+  });
 }
 
 function flowEndpoint(flow, key, nodes, name) {
@@ -329,9 +389,8 @@ function flowEndpoint(flow, key, nodes, name) {
   return endpoint;
 }
 
-function addFlow(ports, port, record) {
+function addFlow(ports, key, record) {
   const {name} = record;
-  const key = port ? `port:${port}` : `flow:${name}`;
   if (!ports.has(key)) ports.set(key, new Map());
   const fields = ports.get(key);
   const previous = fields.get(name);
@@ -357,7 +416,7 @@ function addFlow(ports, port, record) {
 
 function activeProcesses(model) {
   const locals = model.stores.filter(store => store.scope === "local");
-  if (!locals.length) return model.processes;
+  if (!locals.length && !model.includeInit) return model.processes;
   model.initialization.stores = new Map(locals.map(store => [store.name, "wr"]));
   return [model.initialization, ...model.processes];
 }
@@ -379,8 +438,10 @@ function predicate(keyword, value, placeholder) {
 }
 
 function renderModule(model) {
-  const {moduleName, behavior, stores, typeDeclarations, invariant} = model;
-  const sections = [`module ${identifierPattern.test(moduleName.trim()) ? moduleName.trim() : "【待填有效模块名】"};`];
+  const {moduleName, parentModule, constants, behavior, stores, typeDeclarations, invariant, functions} = model;
+  const name = identifierPattern.test(moduleName.trim()) ? moduleName.trim() : "【待填有效模块名】";
+  const sections = [`module ${name}${parentModule ? ` / ${parentModule}` : ""};`];
+  if (constants.trim()) sections.push(`const\n${bodyText(constants)}`);
   if (typeDeclarations.trim()) sections.push(`type\n${bodyText(typeDeclarations)}`);
   if (stores.length) {
     const vars = stores.map(({name, type, scope}) =>
@@ -400,21 +461,48 @@ function renderModule(model) {
     if (access.length) lines.push(`ext ${access.join("\n    ")}`);
     lines.push(predicate("pre", process.pre, "【待填前置条件】"));
     lines.push(predicate("post", process.post, process.key === "init" ? "【待填初始状态】" : "【待填后置条件】"));
+    if (process.comment) lines.push(`comment\n${bodyText(process.comment)}`);
     sections.push([...lines, "end_process;"].join("\n"));
   }
+  if (functions.trim()) sections.push(functions.trim());
   return [...sections, "end_module"].join("\n\n") + "\n";
 }
 
 function exportGraph(model) {
   const copy = model.root.cloneNode(true);
+  const originals = [...model.root.children];
+  const copies = new Map(originals.map((element, index) => [element, copy.children[index]]));
+  const connections = new Map();
+  for (const process of model.processes) {
+    const node = copies.get(process.element);
+    node.replaceChildren();
+    for (const [direction, kind, attribute] of [
+      ["inputs", "input-port", "in-port"], ["outputs", "output-port", "out-port"]
+    ]) {
+      for (const {key, id} of describePorts(process[direction], direction)) {
+        node.append("\n    ");
+        cdfdElement(node, kind, {id});
+        connections.set(`${process.key}:${attribute}:${key}`, id);
+      }
+    }
+    if (node.childElementCount) node.append("\n  ");
+  }
   const updated = new Map([
-    ...model.flows.map(flow => [flow.element, {type: flow.group.type.trim()}]),
+    ...model.flows.map(flow => {
+      const source = model.nodes.get(field(flow.element, "from"));
+      const target = model.nodes.get(field(flow.element, "to"));
+      return [flow.element, {
+        type: flow.group.type.trim(),
+        "out-port": flow.outPort && connections.get(`${source.key}:out-port:${flow.outPort}`),
+        "in-port": flow.inPort && connections.get(`${target.key}:in-port:${flow.inPort}`)
+      }];
+    }),
     ...model.stores.map(store => [store.element, {type: store.type.trim(), scope: store.scope}])
   ]);
   copy.setAttribute("module", model.moduleName.trim());
   copy.setAttribute("behavior", model.behavior.trim());
-  const lines = [...model.root.children].map((original, i) => {
-    const node = copy.children[i];
+  const lines = originals.map(original => {
+    const node = copies.get(original);
     for (const [key, value] of Object.entries(updated.get(original) ?? {})) {
       if (value) node.setAttribute(key, value);
       else node.removeAttribute(key);

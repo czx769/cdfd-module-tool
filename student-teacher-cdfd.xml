@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdfd module="STUDENT_TEACHER_SYSTEM" behavior="CDFD_1">
+  <actor id="admin" name="Administrator"/>
+  <actor id="student" name="Student"/>
+  <actor id="teacher" name="Teacher"/>
+  <process id="receive" name="Receive_Command">
+    <input-port id="I1"/>
+    <input-port id="I2"/>
+    <input-port id="I3"/>
+    <output-port id="O1"/>
+  </process>
+  <process id="validate" name="Validate_Request">
+    <input-port id="request"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+    <output-port id="O3"/>
+    <output-port id="O4"/>
+    <output-port id="O5"/>
+    <output-port id="O6"/>
+    <output-port id="O7"/>
+  </process>
+  <process id="add-student" name="Add_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="modify-student" name="Modify_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="query-student" name="Query_Student">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="add-teacher" name="Add_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="modify-teacher" name="Modify_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <process id="query-teacher" name="Query_Teacher">
+    <input-port id="I1"/>
+    <output-port id="O1"/>
+    <output-port id="O2"/>
+  </process>
+  <store id="users" name="user_file" scope="existing"/>
+  <store id="students" name="student_file" scope="existing"/>
+  <store id="teachers" name="teacher_file" scope="existing"/>
+  <flow from="admin" to="receive" name="admin_request" kind="signal" in-port="I1"/>
+  <flow from="student" to="receive" name="student_request" kind="signal" in-port="I2"/>
+  <flow from="teacher" to="receive" name="teacher_request" kind="signal" in-port="I3"/>
+  <flow from="receive" to="validate" name="request" in-port="request" out-port="O1"/>
+  <flow to="validate" name="request_data" in-port="request"/>
+  <flow from="validate" to="add-student" name="add_student_req" in-port="I1" out-port="O1"/>
+  <flow from="validate" to="modify-student" name="modify_student_req" in-port="I1" out-port="O2"/>
+  <flow from="validate" to="query-student" name="query_student_req" in-port="I1" out-port="O3"/>
+  <flow from="validate" to="add-teacher" name="add_teacher_req" in-port="I1" out-port="O4"/>
+  <flow from="validate" to="modify-teacher" name="modify_teacher_req" in-port="I1" out-port="O5"/>
+  <flow from="validate" to="query-teacher" name="query_teacher_req" in-port="I1" out-port="O6"/>
+  <flow from="validate" name="access_error" out-port="O7"/>
+  <flow from="add-student" name="student_added" out-port="O1"/>
+  <flow from="add-student" name="student_add_error" out-port="O2"/>
+  <flow from="modify-student" name="student_modified" out-port="O1"/>
+  <flow from="modify-student" name="student_modify_error" out-port="O2"/>
+  <flow from="query-student" name="student_info" out-port="O1"/>
+  <flow from="query-student" name="student_query_error" out-port="O2"/>
+  <flow from="add-teacher" name="teacher_added" out-port="O1"/>
+  <flow from="add-teacher" name="teacher_add_error" out-port="O2"/>
+  <flow from="modify-teacher" name="teacher_modified" out-port="O1"/>
+  <flow from="modify-teacher" name="teacher_modify_error" out-port="O2"/>
+  <flow from="query-teacher" name="teacher_info" out-port="O1"/>
+  <flow from="query-teacher" name="teacher_query_error" out-port="O2"/>
+  <access process="validate" store="users" mode="rd"/>
+  <access process="add-student" store="students" mode="wr"/>
+  <access process="add-student" store="users" mode="wr"/>
+  <access process="modify-student" store="students" mode="wr"/>
+  <access process="query-student" store="students" mode="rd"/>
+  <access process="add-teacher" store="teachers" mode="wr"/>
+  <access process="add-teacher" store="users" mode="wr"/>
+  <access process="modify-teacher" store="teachers" mode="wr"/>
+  <access process="query-teacher" store="teachers" mode="rd"/>
+</cdfd>

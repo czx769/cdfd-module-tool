@@ -3,6 +3,7 @@
 const byId = id => document.getElementById(id);
 const status = byId("status");
 const fileInput = byId("cdfd-file");
+const soflInput = byId("sofl-file");
 const pagePicker = byId("page-select");
 const sections = byId("sections");
 const form = byId("form");
@@ -109,14 +110,13 @@ function renderModuleFields() {
   }
 }
 
-function portFields(ports, title) {
+function portFields(ports, direction, title) {
   const cardset = makeElement("section", "", "cardset");
   cardset.append(makeElement("h3", title));
   if (!ports.size) cardset.append(makeElement("p", "无", "hint"));
-  let index = 0;
-  for (const records of ports.values()) {
+  for (const {id, label, records} of describePorts(ports, direction)) {
     const card = makeElement("div", "", "port");
-    if (ports.size > 1) card.append(makeElement("p", `端口 ${++index}`, "hint"));
+    card.append(makeElement("p", `${label}${id === label ? "" : ` · ${id}`}`, "hint"));
     for (const {name, group} of records.values()) {
       formControl(card, group.key, `${name} 类型`, group.type, value => { group.type = value; }, {
         readOnly: group.fixed, placeholder: "填写数据类型"
@@ -138,7 +138,9 @@ function renderProcessFields(process) {
   });
   const label = process.key === "init" ? "初始状态 post" : "后置条件 post";
   formControl(form, `${process.key}-post`, label, process.post, value => { process.post = value; }, {rows: 4});
-  if (process.inputs) form.append(portFields(process.inputs, "输入端口"), portFields(process.outputs, "输出端口"));
+  if (process.inputs) {
+    form.append(portFields(process.inputs, "inputs", "输入端口"), portFields(process.outputs, "outputs", "输出端口"));
+  }
 }
 
 function renderSections() {
@@ -266,6 +268,8 @@ function setRawMode(editing) {
   byId("toggle-raw").textContent = editing ? "返回表单" : "编辑文本";
   byId("preview-title").textContent = editing ? "SOFL 文本编辑" : "SOFL 实时预览";
   byId("raw-note").hidden = !editing;
+  byId("cancel-raw").hidden = !editing;
+  setSoflFeedback("");
   editor.readOnly = !editing;
   form.inert = editing;
   byId("fields").toggleAttribute("data-locked", editing);
@@ -275,6 +279,35 @@ function setRawMode(editing) {
     node.setAttribute("aria-disabled", String(editing));
     node.setAttribute("tabindex", editing ? "-1" : "0");
   }
+}
+
+function setSoflFeedback(message) {
+  const feedback = byId("sofl-feedback");
+  feedback.textContent = message;
+  feedback.hidden = !message;
+}
+
+function validateEditor() {
+  try {
+    const parsed = validateSofl(model, editor.value);
+    setSoflFeedback("");
+    return parsed;
+  } catch (error) {
+    setSoflFeedback(`SOFL 校验失败。${error.message}`);
+    return null;
+  }
+}
+
+function hasUnsavedChanges() {
+  return formDirty || (rawMode && editor.value !== rawLastSaved);
+}
+
+function restoreSpecification(parsed, dirty) {
+  applySofl(model, parsed);
+  formDirty = dirty;
+  setRawMode(false);
+  renderSections();
+  showSection(currentSection);
 }
 
 function resizeDiagram() {
@@ -290,8 +323,7 @@ function resizeDiagram() {
 }
 
 function openModel(next, label) {
-  const dirty = formDirty || (rawMode && editor.value !== rawLastSaved);
-  if (dirty && !window.confirm("切换或导入会替换当前未导出的修改。继续吗？")) return;
+  if (hasUnsavedChanges() && !window.confirm("切换或导入会替换当前未导出的修改。继续吗？")) return;
   model = next;
   formDirty = false;
   byId("workspace").hidden = false;
@@ -327,7 +359,7 @@ function download(filename, contents, mime) {
 }
 
 function downloadSpecification() {
-  if (!editor.value.trim()) return;
+  if (!editor.value.trim() || !validateEditor()) return;
   const editedName = editor.value.match(/^\s*module\s+([a-zA-Z][a-zA-Z0-9_]*)(?=\s*[/;])/)?.[1];
   download(`${editedName ?? "module"}.sofl`, editor.value, "text/plain;charset=utf-8");
   if (rawMode) rawLastSaved = editor.value;
@@ -357,6 +389,30 @@ fileInput.addEventListener("change", async () => {
     if (request !== importRequest) return;
     const detail = error instanceof TypeError ? "请确认文件为 UTF-8 编码。" : error.message;
     setStatus(`导入失败。${detail}`, true);
+  }
+});
+
+soflInput.addEventListener("change", async () => {
+  const file = soflInput.files[0];
+  if (!file) return;
+  soflInput.value = "";
+  if (!model) {
+    setStatus("请先载入或导入对应的 CDFD 图，再导入 .sofl 文件。", true);
+    return;
+  }
+  const request = ++importRequest;
+  try {
+    const text = new TextDecoder("utf-8", {fatal: true}).decode(await file.arrayBuffer());
+    if (request !== importRequest) return;
+    const parsed = validateSofl(model, text);
+    if (hasUnsavedChanges() && !window.confirm("导入会替换当前未导出的规格修改。继续吗？")) return;
+    restoreSpecification(parsed, false);
+    setStatus(`已导入 ${file.name}，与当前 CDFD 一致。`);
+  } catch (error) {
+    if (request !== importRequest) return;
+    const detail = error instanceof TypeError ? "请确认文件为 UTF-8 编码。" : error.message;
+    setStatus(`SOFL 导入失败。${detail}`, true);
+    setSoflFeedback(`SOFL 导入失败。${detail}`);
   }
 });
 
@@ -404,16 +460,10 @@ byId("diagram-fit").addEventListener("click", () => {
 });
 new ResizeObserver(resizeDiagram).observe(diagramViewport);
 
-byId("download-example").addEventListener("click", () => {
-  download("student-teacher-cdfd.xml", example + "\n", "application/xml;charset=utf-8");
-});
-
 byId("toggle-raw").addEventListener("click", () => {
   if (rawMode) {
-    if (editor.value !== rawBaseline && editor.value !== rawLastSaved &&
-        !window.confirm("返回表单会丢弃未导出的文本修改。继续吗？")) return;
-    setRawMode(false);
-    updatePreview();
+    const parsed = validateEditor();
+    if (parsed) restoreSpecification(parsed, hasUnsavedChanges());
   } else {
     rawLastSaved = rawBaseline = editor.value;
     setRawMode(true);
@@ -422,7 +472,17 @@ byId("toggle-raw").addEventListener("click", () => {
   }
 });
 
-editor.addEventListener("input", renderIssues);
+byId("cancel-raw").addEventListener("click", () => {
+  if (editor.value !== rawBaseline && editor.value !== rawLastSaved &&
+      !window.confirm("取消会丢弃未导出的文本修改。继续吗？")) return;
+  setRawMode(false);
+  updatePreview();
+});
+
+editor.addEventListener("input", () => {
+  validateEditor();
+  renderIssues();
+});
 
 byId("download-sofl").addEventListener("click", () => {
   const pending = renderIssues();
@@ -430,6 +490,7 @@ byId("download-sofl").addEventListener("click", () => {
     downloadSpecification();
     return;
   }
+  if (!validateEditor()) return;
   issues.open = true;
   byId("issue-count").focus({preventScroll: true});
   issues.scrollIntoView({block: "nearest"});

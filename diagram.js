@@ -87,23 +87,30 @@ function arrangeDiagram(model) {
   if (actors.length) columns.unshift(actors);
   if (stores.length) columns.push(stores);
 
-  const maxRows = Math.max(...columns.map(column => column.length));
-  const rowHeight = 126;
+  const nodeHeight = id => {
+    const node = model.nodes.get(id);
+    return node.kind === "process" ? Math.max(72, 22 * Math.max(node.inputs.size, node.outputs.size) + 12) : 56;
+  };
+  const columnHeight = column => column.reduce((total, id) => total + nodeHeight(id) + 54, -54);
+  const maxHeight = Math.max(...columns.map(columnHeight));
   const columnWidth = 332;
   const boxes = new Map();
   const outgoingLength = Math.max(116, ...model.flows.filter(({element}) => !field(element, "to"))
     .map(({name}) => name.length * 10 + 24));
   const storeClearance = Math.max(0, outgoingLength - (columnWidth - 206) + 22);
   columns.forEach((column, x) => {
-    column.forEach((id, y) => {
+    let y = (maxHeight - columnHeight(column)) / 2;
+    for (const id of column) {
       const node = model.nodes.get(id);
+      const height = nodeHeight(id);
       boxes.set(id, {
         x: x * columnWidth + (node.kind === "store" ? storeClearance : 0),
-        y: (y + (maxRows - column.length) / 2) * rowHeight,
+        y,
         width: node.kind === "process" ? 206 : 166,
-        height: node.kind === "process" ? 72 : 56
+        height
       });
-    });
+      y += height + 54;
+    }
   });
   return boxes;
 }
@@ -174,10 +181,29 @@ function routeWaypoints(route, boxes) {
   return reverse ? points.reverse() : points;
 }
 
-function diagramLinks(model, boxes, nativeBoxes) {
+function diagramPorts(model, boxes) {
+  const positions = new Map();
+  for (const [id, box] of boxes) {
+    const node = model.nodes.get(id);
+    if (node.kind !== "process") continue;
+    const ports = new Map();
+    for (const [direction, side] of [["inputs", "left"], ["outputs", "right"]]) {
+      const list = describePorts(node[direction], direction);
+      const entries = list.map((port, index) => [port.key, {
+        ...port, direction, position: sidePoint(box, side, (index + 1) / (list.length + 1))
+      }]);
+      ports.set(direction, new Map(entries));
+    }
+    positions.set(id, ports);
+  }
+  return positions;
+}
+
+function diagramLinks(model, boxes, nativeBoxes, ports) {
+  const flows = new Map(model.flows.map(flow => [flow.element, flow]));
   const links = [...model.root.children].filter(node => ["flow", "access"].includes(node.tagName))
     .map(element => {
-      const link = normalizedLink(element);
+      const link = {...normalizedLink(element), flow: flows.get(element)};
       const route = nativeBoxes && model.drawing.routes.get(element);
       return route ? {...link, route, source: route.source, target: route.target} : link;
     });
@@ -187,6 +213,19 @@ function diagramLinks(model, boxes, nativeBoxes) {
       const id = link[source ? "source" : "target"];
       const box = boxes.get(id);
       if (!box) continue;
+      const port = ports.get(id)?.get(source ? "outputs" : "inputs")?.get(
+        source ? link.flow?.outPort : link.flow?.inPort
+      );
+      if (port) {
+        if (source) {
+          link.start = port.position;
+          link.outputPort = port;
+        } else {
+          link.end = port.position;
+          link.inputPort = port;
+        }
+        continue;
+      }
       const other = boxes.get(link[source ? "target" : "source"]);
       const side = link.source === link.target ? (source ? "right" : "top") : connectionSide(box, other, source);
       const slot = {link, box, side, source, order: other ? center(other)[side === "left" || side === "right" ? "y" : "x"] : 0};
@@ -203,18 +242,52 @@ function diagramLinks(model, boxes, nativeBoxes) {
     });
   }
 
-  return links.map(link => {
+  const boundaryCounts = new Map();
+  const boundaryPoint = (point, port, distance) => {
+    let offset = 0;
+    if (port?.records.size > 1) {
+      const count = (boundaryCounts.get(port) ?? 0) + 1;
+      boundaryCounts.set(port, count);
+      offset = Math.sign(distance) * count * 32;
+    }
+    return {x: point.x + distance, y: point.y + offset};
+  };
+  const paths = links.map(link => {
     const boundaryLength = Math.max(114, link.label.length * 10 + 24);
     const start = link.start ?? routePoint(link.route, true, null, nativeBoxes) ??
-      {x: link.end.x - boundaryLength, y: link.end.y};
+      boundaryPoint(link.end, link.inputPort, -boundaryLength);
     const end = link.end ?? routePoint(link.route, false, null, nativeBoxes) ??
-      {x: start.x + boundaryLength, y: start.y};
+      boundaryPoint(start, link.outputPort, boundaryLength);
     let waypoints = routeWaypoints(link.route, nativeBoxes);
-    if (link.source && link.source === link.target && !waypoints.length) {
-      waypoints = [{x: start.x + 32, y: start.y}, {x: start.x + 32, y: end.y - 27}, {x: end.x, y: end.y - 27}];
+    if (!waypoints.length && link.flow?.inPort && link.flow.outPort && start.x >= end.x) {
+      const top = Math.min(boxes.get(link.source).y, boxes.get(link.target).y) - 30;
+      waypoints = [
+        {x: start.x + 26, y: start.y}, {x: start.x + 26, y: top},
+        {x: end.x - 26, y: top}, {x: end.x - 26, y: end.y}
+      ];
     }
     return {...link, points: [start, ...waypoints, end]};
   });
+  const straightFlows = new Map();
+  for (const path of paths) {
+    if (!path.flow || path.points.length !== 2) continue;
+    const key = JSON.stringify(path.points);
+    if (!straightFlows.has(key)) straightFlows.set(key, []);
+    straightFlows.get(key).push(path);
+  }
+  for (const coincident of straightFlows.values()) {
+    if (coincident.length < 2) continue;
+    coincident.forEach(({points}, index) => {
+      const [start, end] = points;
+      const distance = Math.hypot(end.x - start.x, end.y - start.y) || 1;
+      const offset = 20 * (index - (coincident.length - 1) / 2) / distance;
+      points.splice(1, 0, {
+        x: (start.x + end.x) / 2 - (end.y - start.y) * offset,
+        y: (start.y + end.y) / 2 + (end.x - start.x) * offset
+      });
+    });
+  }
+  return paths;
 }
 
 function halfway(points) {
@@ -244,17 +317,33 @@ function addArrows(svg) {
   svg.append(defs);
 }
 
-function graphicsNode(node, box, activate) {
+function graphicsNode(node, box, ports, activate) {
   const {x, y, width, height} = box;
   const group = diagramElement("g", {class: `diagram-node ${node.kind}`});
   group.append(diagramElement("rect", {x, y, width, height, rx: node.kind === "store" ? 15 : 6}));
-  const fontSize = Math.min(21, (width - 10) / Math.max(1, node.name.length * .59), height * .45);
+  const gutter = ports && (ports.get("inputs").size || ports.get("outputs").size) ? 30 : 5;
+  const fontSize = Math.min(21, (width - gutter * 2) / Math.max(1, node.name.length * .59), height * .45);
   group.append(diagramElement("text", {
     x: x + width / 2, y: y + height / 2, "dominant-baseline": "central", "text-anchor": "middle",
     "font-size": Math.max(4, fontSize)
   }, node.name));
   if (node.kind !== "process") return group;
 
+  for (const side of ports.values()) {
+    for (const {id, label, records, direction, position} of side.values()) {
+      const input = direction === "inputs";
+      const {x, y} = position;
+      const port = diagramElement("g", {class: `diagram-port ${direction}`, "data-port": id});
+      port.append(
+        diagramElement("title", {}, `${input ? "输入" : "输出"}端口 ${label}（${id}）\n${[...records.keys()].join("、")}`),
+        diagramElement("circle", {cx: x, cy: y, r: 5}),
+        diagramElement("text", {
+          x: x + (input ? 8 : -8), y, "text-anchor": input ? "start" : "end", "dominant-baseline": "central"
+        }, label)
+      );
+      group.append(port);
+    }
+  }
   group.setAttribute("role", "button");
   group.setAttribute("tabindex", "0");
   group.setAttribute("aria-label", node.name);
@@ -276,7 +365,8 @@ function drawDiagram(svg, model, activate) {
     return box?.width > 0 && box.height > 0;
   });
   const boxes = useImported ? new Map([...model.nodes.keys()].map(id => [id, imported.get(id)])) : arrangeDiagram(model);
-  const links = diagramLinks(model, boxes, useImported ? imported : null);
+  const ports = diagramPorts(model, boxes);
+  const links = diagramLinks(model, boxes, useImported ? imported : null, ports);
 
   const bounds = {left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity};
   const include = (x, y) => {
@@ -309,7 +399,7 @@ function drawDiagram(svg, model, activate) {
   for (const [id, box] of boxes) {
     include(box.x, box.y);
     include(box.x + box.width, box.y + box.height);
-    svg.append(graphicsNode(model.nodes.get(id), box, activate));
+    svg.append(graphicsNode(model.nodes.get(id), box, ports.get(id), activate));
   }
   const width = bounds.right - bounds.left + 44;
   const height = bounds.bottom - bounds.top + 44;
